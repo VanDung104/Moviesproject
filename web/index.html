@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <title>🎬 Movie Explorer</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        background: radial-gradient(circle at top left, #1b2735, #0f2027 80%);
+        color: #f8f9fa;
+        font-family: "Poppins", sans-serif;
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+
+      .header {
+        text-align: center;
+        margin-bottom: 2rem;
+        text-shadow: 0 0 20px rgba(255, 64, 129, 0.6);
+      }
+      .header span {
+        background: linear-gradient(45deg, #ff416c, #ff4b2b);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-weight: 700;
+      }
+
+      .search-bar {
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 40px;
+        padding: 10px;
+        backdrop-filter: blur(6px);
+      }
+      .form-control {
+        background: transparent !important;
+        color: white !important;
+        border: none !important;
+      }
+      .form-control:focus {
+        box-shadow: none !important;
+      }
+
+      .btn-primary {
+        background: linear-gradient(90deg, #ff416c, #ff4b2b);
+        border: none;
+        border-radius: 25px;
+        transition: transform 0.2s ease, box-shadow 0.3s ease;
+      }
+      .btn-primary:hover {
+        transform: scale(1.05);
+        box-shadow: 0 0 15px rgba(255, 75, 43, 0.8);
+      }
+
+      .card {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(8px);
+        border-radius: 18px;
+        transition: all 0.3s ease;
+        padding: 1.5rem;
+      }
+      .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(255, 75, 43, 0.3);
+      }
+
+      .movie-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #ffb3b3;
+      }
+
+      .movie-overview {
+        font-size: 0.9rem;
+        opacity: 0.9;
+      }
+
+      .badge {
+        background: linear-gradient(45deg, #ff416c, #ff4b2b);
+        border: none;
+        font-weight: 500;
+      }
+
+      .spinner-border {
+        width: 3rem;
+        height: 3rem;
+      }
+    </style>
+  </head>
+
+  <body class="p-4">
+    <div class="container">
+      <h1 class="header animate__animated animate__fadeInDown mb-4">
+        <span>🎬 Movie Explorer</span><br />
+        <small class="text-light fw-light">Semantic Search & TF-IDF</small>
+      </h1>
+
+      <!-- Thanh tìm kiếm -->
+      <div class="input-group mb-4 search-bar shadow-sm">
+        <input
+          id="searchInput"
+          type="text"
+          class="form-control border-0 text-white"
+          placeholder="🔍 Nhập tên phim hoặc nội dung..."
+        />
+        <select
+          id="modeSelect"
+          class="form-select bg-transparent text-white border-0"
+          style="max-width: 180px"
+        >
+          <option value="semantic" selected>🧠 Semantic</option>
+          <option value="tfidf">🧮 TF-IDF</option>
+        </select>
+        <button class="btn btn-primary px-4" onclick="searchMovies()">
+          Tìm kiếm
+        </button>
+      </div>
+
+      <div id="loading" class="text-center my-4" style="display: none">
+        <div class="spinner-border text-light" role="status"></div>
+        <p>Đang tải dữ liệu...</p>
+      </div>
+
+      <div id="results" class="row g-4"></div>
+    </div>
+
+    <script>
+      const API_BASE = "http://127.0.0.1:5001";
+
+      async function searchMovies() {
+        const q = document.getElementById("searchInput").value.trim();
+        const mode = document.getElementById("modeSelect").value;
+        if (!q) return alert("Nhập từ khóa tìm kiếm!");
+
+        document.getElementById("loading").style.display = "block";
+        document.getElementById("results").innerHTML = "";
+
+        try {
+          let res, data;
+          if (mode === "semantic") {
+            res = await fetch(`${API_BASE}/search?q=${encodeURIComponent(q)}`);
+            data = await res.json();
+            displaySemanticResults(data);
+          } else {
+            res = await fetch(`${API_BASE}/recommend`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ title: q }),
+            });
+            data = await res.json();
+            displayTfidfResults(data, q);
+          }
+        } catch (err) {
+          console.error(err);
+          alert("❌ Lỗi kết nối đến server.");
+        } finally {
+          document.getElementById("loading").style.display = "none";
+        }
+      }
+
+      // === HIỂN THỊ SEMANTIC SEARCH ===
+      function displaySemanticResults(data) {
+        const resultsDiv = document.getElementById("results");
+        if (!data.results || data.results.length === 0) {
+          resultsDiv.innerHTML =
+            "<p class='text-center'>❌ Không tìm thấy phim nào.</p>";
+          return;
+        }
+
+        data.results.forEach((movie) => {
+          const card = `
+          <div class="col-md-6 col-lg-4 animate__animated animate__fadeInUp">
+            <div class="card h-100 text-white">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="movie-title">${movie.title}</span>
+                <span class="badge">⭐ ${movie.score.toFixed(2)}</span>
+              </div>
+              <p class="movie-overview">${movie.overview}</p>
+              <small class="text-secondary">🎭 ${
+                movie.genres || "Không rõ"
+              }</small>
+            </div>
+          </div>`;
+          resultsDiv.insertAdjacentHTML("beforeend", card);
+        });
+      }
+
+      // === HIỂN THỊ TF-IDF ===
+      function displayTfidfResults(data, query) {
+        const resultsDiv = document.getElementById("results");
+        if (!data.recommendations || data.recommendations.length === 0) {
+          resultsDiv.innerHTML = `<p class='text-center'>❌ Không có gợi ý cho "${query}".</p>`;
+          return;
+        }
+
+        const card = `
+        <div class="col-12 animate__animated animate__fadeInUp">
+          <div class="card p-4 text-white">
+            <h5 class="fw-bold mb-3">🎬 Gợi ý TF-IDF cho: <span class="text-warning">${
+              data.matched_title || query
+            }</span></h5>
+            <div class="d-flex flex-wrap gap-2">
+              ${data.recommendations
+                .map((m) => `<span class="badge">${m}</span>`)
+                .join("")}
+            </div>
+          </div>
+        </div>`;
+        resultsDiv.insertAdjacentHTML("beforeend", card);
+      }
+    </script>
+  </body>
+</html>
