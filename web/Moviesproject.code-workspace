@@ -1,13 +1,16 @@
 {
   "folders": [
-	{
-		"path": ".."
-	},
-	{
-		"path": "../../../../Dev2/Python_code"
-	},
-	{
-		"path": "../../../HCSTT/HcsttApp"
-	}
-]
+    {
+      "path": ".."
+    },
+    {
+      "path": "../../../../Dev2/Python_code"
+    },
+    {
+      "path": "../../../HCSTT/HcsttApp"
+    },
+    {
+      "path": "../../../BigData/bigdataTracNghiem"
+    }
+  ]
 }
