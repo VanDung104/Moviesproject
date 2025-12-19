@@ -2,218 +2,408 @@
 <html lang="vi">
   <head>
     <meta charset="UTF-8" />
-    <title>🎬 Movie Explorer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Movie AI Chatbot - Neon UI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
       rel="stylesheet"
     />
-    <link
-      href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"
-      rel="stylesheet"
-    />
+
     <style>
+      /* --- Định nghĩa màu Neon --- */
+      :root {
+        --color-primary: #00ffc8; /* Neon Teal */
+        --color-secondary: #ff007f; /* Neon Pink/Magenta */
+        --color-dark-bg: #030a10; /* Nền cực tối */
+        --color-surface: #0a1320; /* Bề mặt tối sâu */
+        --color-border: #1a2a40;
+      }
+
       body {
-        background: radial-gradient(circle at top left, #1b2735, #0f2027 80%);
-        color: #f8f9fa;
-        font-family: "Poppins", sans-serif;
-        min-height: 100vh;
-        overflow-x: hidden;
+        font-family: "Inter", sans-serif;
+        background-color: var(--color-dark-bg);
+        background-image: radial-gradient(
+          circle at center,
+          #1b002c 0%,
+          var(--color-dark-bg) 100%
+        );
       }
 
-      .header {
-        text-align: center;
-        margin-bottom: 2rem;
-        text-shadow: 0 0 20px rgba(255, 64, 129, 0.6);
+      /* --- Hiệu ứng viền Neon --- */
+      .neon-border {
+        border: 2px solid var(--color-border);
+        border-radius: 20px;
+        box-shadow: 0 0 10px rgba(0, 255, 200, 0.4),
+          0 0 20px rgba(255, 0, 127, 0.3), inset 0 0 15px rgba(0, 255, 200, 0.1);
       }
-      .header span {
-        background: linear-gradient(45deg, #ff416c, #ff4b2b);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+
+      /* --- Giao diện chat --- */
+      .chat-container {
+        height: 65vh;
+        overflow-y: auto;
+        background-color: var(--color-surface);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.8);
+        scroll-behavior: smooth;
+      }
+
+      /* --- Message Styling --- */
+      .message {
+        max-width: 85%; /* Tăng độ rộng để hiển thị nội dung dài tốt hơn */
+        padding: 12px 18px;
+        border-radius: 15px;
+        margin-bottom: 15px;
+        font-size: 0.95rem;
+        line-height: 1.5;
+        animation: fadeIn 0.3s ease-out forwards;
+      }
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      .user-message {
+        background-color: #0d47a1;
+        align-self: flex-end;
+        border-bottom-right-radius: 5px;
+        box-shadow: 0 2px 8px rgba(13, 71, 161, 0.5);
+      }
+      .ai-message {
+        background-color: #212c3d;
+        align-self: flex-start;
+        border-bottom-left-radius: 5px;
+        box-shadow: 0 2px 8px rgba(33, 44, 61, 0.5);
+      }
+
+      /* --- STYLE CHO MARKDOWN CONTENT (Quan trọng) --- */
+      /* Vì Tailwind reset hết style, cần định nghĩa lại cho đẹp */
+      .message h1, .message h2, .message h3, .message h4 {
+        color: var(--color-primary);
         font-weight: 700;
+        margin-top: 12px;
+        margin-bottom: 6px;
+        text-shadow: 0 0 5px rgba(0, 255, 200, 0.3);
+      }
+      .message h1 { font-size: 1.5em; }
+      .message h2 { font-size: 1.3em; }
+      .message h3 { font-size: 1.15em; }
+      .message h4 { font-size: 1.05em; text-decoration: underline; text-decoration-color: var(--color-secondary); }
+      
+      .message ul { list-style-type: disc; padding-left: 20px; margin-bottom: 10px; }
+      .message ol { list-style-type: decimal; padding-left: 20px; margin-bottom: 10px; }
+      .message li { margin-bottom: 4px; }
+      
+      .message strong { 
+        color: var(--color-secondary); 
+        font-weight: bold;
+      }
+      .message p { margin-bottom: 8px; }
+      .message p:last-child { margin-bottom: 0; }
+
+      /* --- Các nút chế độ --- */
+      .mode-button {
+        transition: all 0.2s ease-in-out;
+        border: 1px solid transparent;
+      }
+      .mode-button:hover { transform: scale(1.05); }
+      .mode-button.active {
+        border-color: var(--shadow-color);
+        box-shadow: 0 0 15px var(--shadow-color);
+        text-shadow: 0 0 5px var(--shadow-color);
+        transform: translateY(-2px);
       }
 
-      .search-bar {
-        background: rgba(255, 255, 255, 0.08);
-        border-radius: 40px;
-        padding: 10px;
-        backdrop-filter: blur(6px);
+      #mode-semantic { background-color: #00a880; }
+      #mode-recommend { background-color: #7b00a8; }
+      #mode-semantic.active { --shadow-color: var(--color-primary); }
+      #mode-recommend.active { --shadow-color: var(--color-secondary); }
+
+      /* --- Input & Button --- */
+      .chat-input {
+        background-color: #1a2a40;
+        border: 1px solid #30363d;
+        box-shadow: 0 0 5px rgba(0, 255, 200, 0.2);
       }
-      .form-control {
-        background: transparent !important;
-        color: white !important;
-        border: none !important;
-      }
-      .form-control:focus {
-        box-shadow: none !important;
+      .chat-input:focus {
+        box-shadow: 0 0 0 1px var(--color-primary) inset, 0 0 10px var(--color-primary);
+        border-color: var(--color-primary);
       }
 
-      .btn-primary {
-        background: linear-gradient(90deg, #ff416c, #ff4b2b);
-        border: none;
-        border-radius: 25px;
-        transition: transform 0.2s ease, box-shadow 0.3s ease;
+      #send-button {
+        background-color: var(--color-primary);
+        color: var(--color-dark-bg);
+        font-weight: bold;
+        box-shadow: 0 0 15px var(--color-primary);
       }
-      .btn-primary:hover {
+      #send-button:hover:not(:disabled) {
+        background-color: #00d9a8;
+        box-shadow: 0 0 25px var(--color-primary);
         transform: scale(1.05);
-        box-shadow: 0 0 15px rgba(255, 75, 43, 0.8);
       }
 
-      .card {
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(8px);
-        border-radius: 18px;
-        transition: all 0.3s ease;
-        padding: 1.5rem;
+      /* --- Typing Effect --- */
+      .typing-effect {
+        border-right: 2px solid var(--color-primary);
+        display: inline-block;
+        animation: blink-caret 0.75s step-end infinite;
       }
-      .card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 25px rgba(255, 75, 43, 0.3);
-      }
-
-      .movie-title {
-        font-size: 1.2rem;
-        font-weight: 600;
-        color: #ffb3b3;
-      }
-
-      .movie-overview {
-        font-size: 0.9rem;
-        opacity: 0.9;
-      }
-
-      .badge {
-        background: linear-gradient(45deg, #ff416c, #ff4b2b);
-        border: none;
-        font-weight: 500;
-      }
-
-      .spinner-border {
-        width: 3rem;
-        height: 3rem;
+      .no-typing { border-right: none !important; }
+      @keyframes blink-caret {
+        from, to { border-color: transparent; }
+        50% { border-color: var(--color-primary); }
       }
     </style>
   </head>
-
-  <body class="p-4">
-    <div class="container">
-      <h1 class="header animate__animated animate__fadeInDown mb-4">
-        <span>🎬 Movie Explorer</span><br />
-        <small class="text-light fw-light">Semantic Search & TF-IDF</small>
-      </h1>
-
-      <!-- Thanh tìm kiếm -->
-      <div class="input-group mb-4 search-bar shadow-sm">
-        <input
-          id="searchInput"
-          type="text"
-          class="form-control border-0 text-white"
-          placeholder="🔍 Nhập tên phim hoặc nội dung..."
-        />
-        <select
-          id="modeSelect"
-          class="form-select bg-transparent text-white border-0"
-          style="max-width: 180px"
+  <body class="text-gray-100 min-h-screen p-4 sm:p-8">
+    <div class="max-w-4xl mx-auto">
+      <header class="text-center mb-8">
+        <h1
+          class="text-5xl font-extrabold text-white mb-2"
+          style="text-shadow: 0 0 15px var(--color-primary)"
         >
-          <option value="semantic" selected>🧠 Semantic</option>
-          <option value="tfidf">🧮 TF-IDF</option>
-        </select>
-        <button class="btn btn-primary px-4" onclick="searchMovies()">
-          Tìm kiếm
+          Movie AI Chatbot
+        </h1>
+        <p class="text-lg text-gray-400">Chọn chế độ tìm kiếm để bắt đầu</p>
+      </header>
+
+      <div class="flex justify-center space-x-6 mb-8">
+        <button
+          id="mode-semantic"
+          data-mode="SEMANTIC_SEARCH"
+          class="mode-button p-3 text-white font-bold rounded-full transition duration-150 active"
+        >
+          🔍 Tìm kiếm Ngữ nghĩa
+        </button>
+        <button
+          id="mode-recommend"
+          data-mode="TFIDF_RECOMMEND"
+          class="mode-button p-3 text-white font-bold rounded-full transition duration-150"
+        >
+          ⭐ Gợi ý Phim Tương tự
         </button>
       </div>
 
-      <div id="loading" class="text-center my-4" style="display: none">
-        <div class="spinner-border text-light" role="status"></div>
-        <p>Đang tải dữ liệu...</p>
+      <div
+        id="chat-container"
+        class="chat-container rounded-3xl p-6 flex flex-col space-y-3 neon-border"
+      >
+        <div class="message ai-message text-sm">
+          Chào bạn! Bạn đang ở chế độ <strong>Tìm kiếm Ngữ nghĩa</strong>. Hãy nhập mô tả hoặc cốt truyện.
+        </div>
       </div>
 
-      <div id="results" class="row g-4"></div>
+      <div class="mt-6 flex space-x-3">
+        <input
+          type="text"
+          id="chat-input"
+          placeholder="Nhập câu hỏi hoặc tên phim..."
+          class="chat-input flex-grow p-4 rounded-xl text-gray-100 focus:outline-none"
+          onkeypress="if(event.key === 'Enter') sendMessage()"
+        />
+        <button
+          id="send-button"
+          onclick="sendMessage()"
+          class="p-4 rounded-xl disabled:bg-gray-500 disabled:shadow-none"
+        >
+          <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
+          </svg>
+        </button>
+      </div>
+
+      <div
+        id="status-message"
+        class="text-center text-sm mt-3 text-gray-500 hidden"
+      >
+        Đang xử lý...
+      </div>
+      <div
+        id="error-message"
+        class="text-red-400 bg-red-900 bg-opacity-30 p-2 rounded-lg mt-3 hidden"
+      ></div>
     </div>
 
     <script>
-      const API_BASE = "http://127.0.0.1:5001";
+      const API_BASE_URL = "http://127.0.0.1:5001";
+      const chatContainer = document.getElementById("chat-container");
+      const chatInput = document.getElementById("chat-input");
+      const sendButton = document.getElementById("send-button");
+      const statusMessage = document.getElementById("status-message");
+      const errorMessage = document.getElementById("error-message");
 
-      async function searchMovies() {
-        const q = document.getElementById("searchInput").value.trim();
-        const mode = document.getElementById("modeSelect").value;
-        if (!q) return alert("Nhập từ khóa tìm kiếm!");
+      let searchMode = "SEMANTIC_SEARCH";
+      let isTyping = false;
 
-        document.getElementById("loading").style.display = "block";
-        document.getElementById("results").innerHTML = "";
+      // --- HÀM XỬ LÝ TEXT: Dùng Marked.js ---
+      function formatTextForDisplay(text) {
+        // Chuyển đổi Markdown sang HTML (hỗ trợ xuống dòng với <br>)
+        marked.setOptions({
+          breaks: true,
+          gfm: true
+        });
+        return marked.parse(text);
+      }
+
+      // --- HÀM TYPING EFFECT (Đã tối ưu tốc độ) ---
+      function typeWriter(element, formattedHtml, delay = 5) {
+        // 1. Tạo một thẻ tạm để lấy Plain Text (vì gõ HTML tag rất xấu)
+        const tempDiv = document.createElement("div");
+        tempDiv.innerHTML = formattedHtml;
+        const pureText = tempDiv.textContent || tempDiv.innerText;
+
+        let i = 0;
+        element.innerHTML = ""; // Xóa nội dung cũ
+
+        // Tốc độ: gõ 3 ký tự một lúc (chunk)
+        const step = 3; 
+
+        function type() {
+          if (i < pureText.length) {
+            // Lấy 1 cụm ký tự
+            const chunk = pureText.substring(i, i + step);
+            element.innerHTML += chunk;
+            i += step;
+
+            // Tự động cuộn xuống
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+
+            // Xử lý con trỏ nhấp nháy
+            let lastChild = element.querySelector('.typing-effect');
+            if (!lastChild) {
+                const cursor = document.createElement("span");
+                cursor.className = "typing-effect";
+                element.appendChild(cursor);
+            } else {
+                element.appendChild(lastChild); // Đẩy con trỏ xuống cuối
+            }
+
+            setTimeout(type, delay);
+          } else {
+            // KHI HOÀN THÀNH:
+            // Thay thế toàn bộ text bằng HTML đã render (để hiện màu, bold, header...)
+            element.innerHTML = formattedHtml;
+            
+            // Xóa con trỏ nhấp nháy
+            const cursor = element.querySelector(".typing-effect");
+            if (cursor) cursor.remove();
+            
+            isTyping = false;
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+          }
+        }
+        type();
+      }
+
+      function addMessage(text, isUser, toolUsed = null) {
+        const msgDiv = document.createElement("div");
+        msgDiv.className = `message text-gray-100 ${
+          isUser ? "user-message" : "ai-message"
+        }`;
+        msgDiv.style.alignSelf = isUser ? "flex-end" : "flex-start";
+
+        const formattedHtml = formatTextForDisplay(text);
+
+        let toolInfo = "";
+        if (!isUser && toolUsed && toolUsed !== "none") {
+          const toolMap = {
+            semantic:
+              '<span style="color: var(--color-primary);">🔍 Semantic Search (Pinecone)</span>',
+            tfidf:
+              '<span style="color: var(--color-secondary);">⭐ Gợi ý Phim Tương tự (TF-IDF)</span>',
+          };
+          const toolName = toolMap[toolUsed] || "Đang sử dụng Tool";
+          // Thêm border-bottom nhẹ để tách biệt tên tool và nội dung
+          toolInfo = `<div class="mb-2 pb-2 border-b border-gray-700 text-xs font-semibold">${toolName}</div>`;
+        }
+
+        if (isUser) {
+          msgDiv.innerHTML = formattedHtml;
+          chatContainer.appendChild(msgDiv);
+        } else {
+          // Tin nhắn AI
+          msgDiv.innerHTML = toolInfo; // Hiện tool info trước
+          
+          // Tạo div chứa nội dung chính để chạy hiệu ứng gõ
+          const contentDiv = document.createElement("div");
+          msgDiv.appendChild(contentDiv);
+          chatContainer.appendChild(msgDiv);
+
+          isTyping = true;
+          // Chỉ chạy hiệu ứng gõ cho phần nội dung trả lời, giữ nguyên tool info
+          typeWriter(contentDiv, formattedHtml);
+        }
+
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+      }
+
+      // Xử lý chuyển đổi chế độ
+      document.querySelectorAll(".mode-button").forEach((button) => {
+        button.addEventListener("click", () => {
+          const newMode = button.getAttribute("data-mode");
+          searchMode = newMode;
+
+          document
+            .querySelectorAll(".mode-button")
+            .forEach((btn) => btn.classList.remove("active"));
+          button.classList.add("active");
+
+          let welcomeText = "";
+          if (newMode === "SEMANTIC_SEARCH") {
+            welcomeText = "Bạn đang ở chế độ **Tìm kiếm Ngữ nghĩa**. Hãy nhập mô tả hoặc cốt truyện.";
+          } else {
+            welcomeText = "Bạn đang ở chế độ **Gợi ý Phim Tương tự**. Hãy nhập tên phim gốc.";
+          }
+          addMessage(welcomeText, false);
+        });
+      });
+
+      function setStatus(isLoading, errorText = "") {
+        sendButton.disabled = isLoading;
+        sendButton.innerHTML = isLoading
+          ? '<div class="w-6 h-6 border-4 border-t-4 border-t-white border-gray-400 rounded-full animate-spin"></div>'
+          : '<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>';
+
+        statusMessage.classList.toggle("hidden", !isLoading);
+        errorMessage.classList.add("hidden");
+        if (errorText) {
+          errorMessage.textContent = errorText;
+          errorMessage.classList.remove("hidden");
+        }
+      }
+
+      async function sendMessage() {
+        if (isTyping) return; // Chặn spam enter khi đang gõ
+        let query = chatInput.value.trim();
+        if (!query) return;
+
+        let finalQuery = `[MODE: ${searchMode}] ${query}`;
+
+        addMessage(query, true);
+        chatInput.value = "";
+        setStatus(true);
+
+        const url = `${API_BASE_URL}/chat`;
 
         try {
-          let res, data;
-          if (mode === "semantic") {
-            res = await fetch(`${API_BASE}/search?q=${encodeURIComponent(q)}`);
-            data = await res.json();
-            displaySemanticResults(data);
-          } else {
-            res = await fetch(`${API_BASE}/recommend`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ title: q }),
-            });
-            data = await res.json();
-            displayTfidfResults(data, q);
-          }
-        } catch (err) {
-          console.error(err);
-          alert("❌ Lỗi kết nối đến server.");
+          const response = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ query: finalQuery }),
+          });
+          const data = await response.json();
+
+          if (!response.ok) throw new Error(data.error || `Lỗi HTTP ${response.status}`);
+
+          addMessage(data.response, false, data.tool_used);
+        } catch (error) {
+          console.error("Chatbot Error:", error);
+          const errorMsg = `Lỗi kết nối: ${error.message}.`;
+          addMessage(errorMsg, false);
+          setStatus(false, errorMsg);
         } finally {
-          document.getElementById("loading").style.display = "none";
+          setStatus(false);
         }
-      }
-
-      // === HIỂN THỊ SEMANTIC SEARCH ===
-      function displaySemanticResults(data) {
-        const resultsDiv = document.getElementById("results");
-        if (!data.results || data.results.length === 0) {
-          resultsDiv.innerHTML =
-            "<p class='text-center'>❌ Không tìm thấy phim nào.</p>";
-          return;
-        }
-
-        data.results.forEach((movie) => {
-          const card = `
-          <div class="col-md-6 col-lg-4 animate__animated animate__fadeInUp">
-            <div class="card h-100 text-white">
-              <div class="d-flex justify-content-between align-items-center mb-2">
-                <span class="movie-title">${movie.title}</span>
-                <span class="badge">⭐ ${movie.score.toFixed(2)}</span>
-              </div>
-              <p class="movie-overview">${movie.overview}</p>
-              <small class="text-secondary">🎭 ${
-                movie.genres || "Không rõ"
-              }</small>
-            </div>
-          </div>`;
-          resultsDiv.insertAdjacentHTML("beforeend", card);
-        });
-      }
-
-      // === HIỂN THỊ TF-IDF ===
-      function displayTfidfResults(data, query) {
-        const resultsDiv = document.getElementById("results");
-        if (!data.recommendations || data.recommendations.length === 0) {
-          resultsDiv.innerHTML = `<p class='text-center'>❌ Không có gợi ý cho "${query}".</p>`;
-          return;
-        }
-
-        const card = `
-        <div class="col-12 animate__animated animate__fadeInUp">
-          <div class="card p-4 text-white">
-            <h5 class="fw-bold mb-3">🎬 Gợi ý TF-IDF cho: <span class="text-warning">${
-              data.matched_title || query
-            }</span></h5>
-            <div class="d-flex flex-wrap gap-2">
-              ${data.recommendations
-                .map((m) => `<span class="badge">${m}</span>`)
-                .join("")}
-            </div>
-          </div>
-        </div>`;
-        resultsDiv.insertAdjacentHTML("beforeend", card);
       }
     </script>
   </body>
